@@ -62,6 +62,8 @@ print "Convert arrival time..."
 scheds.arrival_time = scheds.arrival_time.apply(lambda x: datetime.strptime(x, '%H:%M:%S') if int(x[:2]) < 24
                     else datetime.strptime(x.replace(x[:2], str(int(x[:2])-24).zfill(2), 1), '%H:%M:%S'))
 
+scheds.drop(['start_date', 'end_date'], axis = 1, inplace = True)
+
 mon = scheds[scheds.monday == 1].sort_values(['rds_index', 'arrival_time'])
 tues_to_thurs = scheds[scheds.tuesday == 1].sort_values(['rds_index', 'arrival_time'])
 fri = scheds[scheds.friday == 1].sort_values(['rds_index', 'arrival_time'])
@@ -76,12 +78,16 @@ sun = scheds[scheds.sunday == 1].sort_values(['rds_index', 'arrival_time'])
 print "Calculate headways..."
 dfs = [mon, tues_to_thurs, fri, sat, sun]
 for i, df in enumerate(dfs):
+    # calc time delta between each row
     df['headways'] = df.arrival_time.diff()
     df['headways'] = df['headways'].apply(lambda x: x.seconds / 60.0)
     if i < 4:
         df2 = dfs[i + 1]
     else:
         df2 = dfs[0]
+    # deal with rds_index change by looking at last arrival of previous day
+    # assign the difference between those two times + 24 hours since the script
+    # only recognizes one day 
     mask = df['rds_index'] != df['rds_index'].shift(1)
     masked = df[mask].merge(df2.groupby('rds_index', as_index = False)\
             .max()[['rds_index', 'arrival_time']], on='rds_index', how = 'left')
@@ -89,7 +95,8 @@ for i, df in enumerate(dfs):
             for i in masked.index]
     diff = [x.seconds / 60.0 for x in diff]
     df.loc[mask, 'headways'] = diff
-
+    df.drop(['start_date', 'end_date', 'departure_time'], axis = 1, inplace = True)
+    df.drop(daysofweek[1:], axis = 1, inplace = True)
 
 print "Exporting data..."
 mon.to_csv('schedules/monday.csv')
