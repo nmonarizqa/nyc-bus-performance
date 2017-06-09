@@ -24,10 +24,10 @@ for boro in boros:
         name = re.search(r'transit_(.*?).zip', boro).group(1)
     else:
         name = 'busco'
-    print "Downloading data for boro %s..." %boro
+    print "Downloading data for %s..." %name
     r = requests.get(boro, stream = True)
     z = zf.ZipFile(StringIO.StringIO(r.content))
-    print "Extracting data for boro %s..." %boro
+    print "Extracting data for %s..." %name
     z.extractall(datadirectory + '/schedules/' + name)
 
 trips = pd.DataFrame()
@@ -61,7 +61,8 @@ calls = pd.read_csv(fname)
 
 calls = calls[['timestamp','trip_id','next_stop_id','dist_from_stop']]
 calls['timestamp'] = calls['timestamp'].apply(lambda x: datetime.strptime(x, "%Y-%m-%dT%H:%M:%SZ") - timedelta(hours=5))
-calls=calls[calls['timestamp'] >= datetime(2017,6,1)]
+calls=calls[calls['timestamp'] >= datetime.striptime(date, "%Y-%m-%d")]
+calls=calls[calls['timestamp'] < datetime.striptime(date, "%Y-%m-%d")+timedelta(days=1)]
 def get_route(x):
     try:
         return x.split("_")[2]
@@ -107,5 +108,6 @@ for i in range(len(calls)):
 calls['headways'] = headways
 calls = calls.drop('dist_from_stop', axis=1)
 calls = calls[calls.next_stop_id !='\N']
-calls.to_csv("observed_headways.csv")
+outname = "%s/calls/observed_headways_%s.csv" %(datadirectory, date)
+calls.to_csv("/calls/observed_headways.csv")
 print "DONE!"
