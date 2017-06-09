@@ -50,7 +50,7 @@ yearmonth = date[:7]
 # download and unzip calls
 print "Download calls..."
 path = "%s/%s/%s/bus_time_%s.csv.xz" %(server,year, yearmonth, date.replace("-",""))
-destination = "calls/%s.csv.xz" %(date)
+destination = "%s/calls/%s.csv.xz" %(datadirectory, date)
 comm = "curl -o %s %s; unxz %s" %(destination, path, destination)
 os.system(comm)
 
