@@ -90,8 +90,13 @@ for i, df in enumerate(dfs):
             for i in masked.index]
     diff = [x.seconds / 60.0 for x in diff]
     df.loc[mask, 'headways'] = diff
+    # sometimes differen bus trips are listed that arrive at the same time
+    # use headway from first instance at that time
+    df['headways'].replace(to_replace = 0, method = 'ffill', inplace = True)
     df.drop(['departure_time'], axis = 1, inplace = True)
     df.drop(daysofweek[1:], axis = 1, inplace = True)
+
+
 
 
 mon.to_csv('schedules/monday.csv', index = False)
