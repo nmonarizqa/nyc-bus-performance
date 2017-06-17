@@ -9,7 +9,7 @@ from datetime import timedelta
 import numpy as np
 import re
 import json
-datadirectory = '/Users/shay/CUSP/transitcenter_capstone/data/'
+datadirectory = 'data/'
 
 def getSched():
     bx = 'http://web.mta.info/developers/data/nyct/bus/google_transit_bronx.zip'
@@ -36,7 +36,8 @@ def getSched():
         temp = temp.merge(trips[['route_id', 'trip_id', 'direction_id', 'service_id']], how = 'left')
         temp = temp.merge(cal)
         sched = sched.append(temp)
-    sched['rds_index'] = sched['route_id'] + sched['direction_id'].astype(str) + sched['stop_id'].astype(str)
+    sched['rds_index'] = sched['route_id'] + '_' + sched['direction_id'].astype(str)\
+                    + '_' + sched['stop_id'].astype(str)
     return sched, enddate
 
 scheds, enddate = getSched()
@@ -82,7 +83,8 @@ for i, df in enumerate(dfs):
     # deal with rds_index change by looking at last arrival of previous day
     # assign the difference between those two times + 24 hours since the script
     # only recognizes one day
-    df['headways'] = df['headways'].apply(lambda x: x.seconds / 60.0)
+    df['headways'] = df['headways'].apply(lambda x: x if type(x) == pd.tslib.NaTType
+                                    else x.seconds / 60.0)
     mask = df['rds_index'] != df['rds_index'].shift(1)
     masked = df[mask].merge(df2.groupby('rds_index', as_index = False)\
             .max()[['rds_index', 'arrival_time']], on='rds_index', how = 'left')
@@ -95,9 +97,6 @@ for i, df in enumerate(dfs):
     df['headways'].replace(to_replace = 0, method = 'ffill', inplace = True)
     df.drop(['departure_time'], axis = 1, inplace = True)
     df.drop(daysofweek[1:], axis = 1, inplace = True)
-
-
-
 
 mon.to_csv('schedules/monday.csv', index = False)
 tues_to_thurs.to_csv('schedules/tues_to_thurs.csv', index = False)
