@@ -34,7 +34,7 @@ def get_calls(today_str):
     df1 = pd.read_csv(filepath_tomorrow)
     # merge both
     calls = pd.concat([df0, df1]).sort_values(['vehicle_id','timestamp'])
-    calls = calls[calls.service_date == int(today_str)]
+    calls = calls[calls.service_date == int(today_str.replace("-","")]
     return calls
 
 ## get at stop buses
